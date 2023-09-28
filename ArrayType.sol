@@ -38,3 +38,19 @@ contract ArrayType2 { //不定长数组
         arr.push(_value);
     }
 }
+
+contract ArrayType3 { //不定长二维数组
+    uint [][] arr = [[1,2],[3,4]];
+
+    function getArray() public view returns (uint[][] memory) {
+        return arr;
+    }
+
+    function getArrayLength() public view  returns(uint) {
+        return arr.length;
+    }
+
+   function pushArray(uint _index, uint _value) public  {
+        arr[_index].push(_value);
+   }
+}
