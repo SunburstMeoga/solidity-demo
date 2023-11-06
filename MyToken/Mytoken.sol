@@ -47,6 +47,15 @@ contract MyToken is Context {
         return _balances[account];
     }
 
+    //返回授权的代币数量
+    function allowanceOf(
+        address _owner,
+        address _spender
+    ) public view returns (uint256) {
+        return _allowances[_owner][_spender];
+    }
+
+    // 函数
     //代币转发
     function transfer(address to, uint256 amount) public returns (bool) {
         address owner = _msgSender();
@@ -54,8 +63,60 @@ contract MyToken is Context {
         return true;
     }
 
-    //转账函数
+    //代币授权
+    function approve(
+        address _owner,
+        address _spender,
+        uint256 _amount
+    ) public returns (bool) {
+        _owner = _msgSender();
+        _approve(_owner, _spender, _amount);
+        return true;
+    }
+
+    //授权代币转发
+    function spenderAllowances(
+        address from,
+        address to,
+        uint256 amount
+    ) public returns (bool) {
+        address _owner = _msgSender();
+        //更新授权账户信息
+        _spenderAllowance(from, _owner, amount);
+        // 执行转账
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    //事件
+    event Transfer(address _from, address _to, uint256 _value);
+    event Approval(address _owner, address _spender, uint256 _value);
+
+    //合约内部函数
+    function _mint(address _account, uint256 _amount) internal {
+        //internal表示只在合约内部使用
+        require(_account != address(0), "ERC20: mint to the zero address");
+        _totalSupply += _amount; //初始化货币数量
+        unchecked {
+            //unchecked表示不用通过检查
+            _balances[_account] += _amount; //给某个账号注入起始资金
+        }
+    }
+
+    function _approve(
+        address _owner,
+        address _spender,
+        uint256 amount
+    ) internal {
+        //授权
+        require(_owner != address(0), "ERC20: mint to the zero address");
+        require(_spender != address(0), "ERC20: mint to the zero address");
+        _allowances[_owner][_spender] = amount;
+        emit Approval(_owner, _spender, amount);
+    }
+
     function _transfer(address from, address to, uint256 amount) internal {
+        //转账
         require(from != address(0), "ERC20: mint to the zero address");
         require(to != address(0), "ERC20: mint to the zero address");
 
@@ -66,16 +127,24 @@ contract MyToken is Context {
             _balances[from] -= amount;
             _balances[to] += amount;
         }
+        emit Transfer(from, to, amount);
     }
 
-    //合约内部函数
-    function _mint(address _account, uint256 _amount) internal {
-        //internal表示只在合约内部使用
-        require(_account != address(0), "ERC20: mint to the zero address");
-        _totalSupply += _amount; //初始化货币数量
-        unchecked {
-            //unchecked表示不用通过检查
-            _balances[_account] += _amount; //给某个账号注入起始资金
+    function _spenderAllowance(
+        address _owner,
+        address _spender,
+        uint256 _amount
+    ) internal {
+        uint256 currentAllowance = allowanceOf(_owner, _spender);
+        if (currentAllowance > type(uint256).max) {
+            require(
+                currentAllowance >= _amount,
+                unicode"ERC20: Error 余额不足"
+            );
+
+            unchecked {
+                _approve(_owner, _spender, currentAllowance - _amount);
+            }
         }
     }
 }
